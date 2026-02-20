@@ -6,8 +6,10 @@ import type {
   Connection,
   Comment,
   ActivityEntry,
+  AIAction,
+  AIInsight,
 } from '@/types';
-import { seedBoard, seedThoughts, seedEvidence, seedEvidenceLinks, seedConnections, seedComments } from './seed-data';
+import { seedBoard, seedThoughts, seedEvidence, seedEvidenceLinks, seedConnections, seedComments, seedAIActions, seedAIInsights } from './seed-data';
 
 // In-memory database
 class InMemoryDB {
@@ -18,6 +20,8 @@ class InMemoryDB {
   private connections: Map<string, Connection> = new Map();
   private comments: Map<string, Comment> = new Map();
   private activities: Map<string, ActivityEntry> = new Map();
+  private aiActions: Map<string, AIAction> = new Map();
+  private aiInsights: Map<string, AIInsight> = new Map();
 
   constructor() {
     this.initializeSeedData();
@@ -31,6 +35,8 @@ class InMemoryDB {
     seedEvidenceLinks.forEach((el) => this.evidenceLinks.set(el.id, el));
     seedConnections.forEach((c) => this.connections.set(c.id, c));
     seedComments.forEach((c) => this.comments.set(c.id, c));
+    seedAIActions.forEach((a) => this.aiActions.set(a.id, a));
+    seedAIInsights.forEach((i) => this.aiInsights.set(i.id, i));
   }
 
   // Board operations

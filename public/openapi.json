@@ -1,0 +1,559 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "OSINT Investigation Board API",
+    "version": "1.0.0",
+    "description": "API for collaborative OSINT investigation workspace with reasoning-first approach"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/boards": {
+      "get": {
+        "summary": "Get all boards",
+        "tags": ["Boards"],
+        "responses": {
+          "200": {
+            "description": "List of boards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "boards": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Board"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new board",
+        "tags": ["Boards"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Board"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Board created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "board": {
+                      "$ref": "#/components/schemas/Board"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{id}": {
+      "get": {
+        "summary": "Get board with all related data",
+        "tags": ["Boards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Board with related data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "board": {
+                      "$ref": "#/components/schemas/Board"
+                    },
+                    "thoughts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Thought"
+                      }
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Evidence"
+                      }
+                    },
+                    "evidenceLinks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvidenceLink"
+                      }
+                    },
+                    "connections": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Connection"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update a board",
+        "tags": ["Boards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["Active", "Archived"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Board updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a board",
+        "tags": ["Boards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Board deleted"
+          }
+        }
+      }
+    },
+    "/thoughts": {
+      "post": {
+        "summary": "Create a new thought",
+        "tags": ["Thoughts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Thought"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Thought created"
+          }
+        }
+      }
+    },
+    "/thoughts/{id}": {
+      "patch": {
+        "summary": "Update a thought",
+        "tags": ["Thoughts"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thought updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a thought",
+        "tags": ["Thoughts"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thought deleted"
+          }
+        }
+      }
+    },
+    "/evidence": {
+      "post": {
+        "summary": "Create new evidence",
+        "tags": ["Evidence"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Evidence"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evidence created"
+          }
+        }
+      }
+    },
+    "/evidence-links": {
+      "post": {
+        "summary": "Link evidence to a thought",
+        "tags": ["Evidence Links"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceLink"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evidence link created"
+          }
+        }
+      }
+    },
+    "/evidence-links/{id}": {
+      "patch": {
+        "summary": "Update an evidence link",
+        "tags": ["Evidence Links"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "relation": {
+                    "type": "string",
+                    "enum": ["Supports", "Contradicts", "Context"]
+                  },
+                  "isKey": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evidence link updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an evidence link",
+        "tags": ["Evidence Links"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evidence link deleted"
+          }
+        }
+      }
+    },
+    "/connections": {
+      "post": {
+        "summary": "Create a connection between thoughts",
+        "tags": ["Connections"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Connection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Connection created"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Board": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Active", "Archived"]
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "Thought": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["Question", "Hypothesis", "Claim", "Observation"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Open", "Investigating", "Supported", "Disproved", "Parked", "Conflicted"]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "Evidence": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["Profiler", "LinkAnalysis", "URL", "Note", "CaseArtifact", "SearchResult"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reliability": {
+            "type": "string",
+            "enum": ["Unknown", "Low", "Medium", "High"]
+          },
+          "extractedEntities": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "rawPayload": {
+            "type": "object"
+          }
+        }
+      },
+      "EvidenceLink": {
+        "type": "object",
+        "description": "Links evidence to a thought with a specific relationship",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string",
+            "description": "Thought ID"
+          },
+          "evidenceId": {
+            "type": "string",
+            "description": "Evidence ID"
+          },
+          "relation": {
+            "type": "string",
+            "enum": ["Supports", "Contradicts", "Context"],
+            "description": "How this evidence relates to the thought"
+          },
+          "isKey": {
+            "type": "boolean",
+            "description": "Whether this is key evidence for this specific thought"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note about the relationship"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Connection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["supports", "contradicts", "related"]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { thoughtsApi, evidenceApi, evidenceLinksApi, connectionsApi } from '@/lib/api-client';
 import type {
   Board,
   Thought,
@@ -109,101 +110,234 @@ export const useBoardStore = create<BoardStore>()(
       })),
       
       // Thought actions
-      addThought: (thought) => set((state) => ({
-        thoughts: [...state.thoughts, thought],
-        activities: [
-          ...state.activities,
-          {
-            id: `activity-${Date.now()}`,
-            boardId: thought.boardId,
-            type: 'thought_created',
-            userId: thought.createdBy,
-            userName: 'Current User',
-            timestamp: new Date(),
-            details: { thoughtId: thought.id, thoughtTitle: thought.title },
-          },
-        ],
-      })),
+      addThought: async (thought) => {
+        // Optimistic update
+        set((state) => ({
+          thoughts: [...state.thoughts, thought],
+          activities: [
+            ...state.activities,
+            {
+              id: `activity-${Date.now()}`,
+              boardId: thought.boardId,
+              type: 'thought_created',
+              userId: thought.createdBy,
+              userName: 'Current User',
+              timestamp: new Date(),
+              details: { thoughtId: thought.id, thoughtTitle: thought.title },
+            },
+          ],
+        }));
+        
+        // Sync with API
+        try {
+          await thoughtsApi.create(thought);
+        } catch (error) {
+          console.error('Failed to create thought:', error);
+          // Rollback on error
+          set((state) => ({
+            thoughts: state.thoughts.filter((t) => t.id !== thought.id),
+          }));
+        }
+      },
       
-      updateThought: (id, updates) => set((state) => ({
-        thoughts: state.thoughts.map((t) =>
-          t.id === id ? { ...t, ...updates, updatedAt: new Date() } : t
-        ),
-      })),
+      updateThought: async (id, updates) => {
+        // Optimistic update
+        set((state) => ({
+          thoughts: state.thoughts.map((t) =>
+            t.id === id ? { ...t, ...updates, updatedAt: new Date() } : t
+          ),
+        }));
+        
+        // Sync with API
+        try {
+          await thoughtsApi.update(id, updates);
+        } catch (error) {
+          console.error('Failed to update thought:', error);
+        }
+      },
       
-      deleteThought: (id) => set((state) => ({
-        thoughts: state.thoughts.filter((t) => t.id !== id),
-        evidenceLinks: state.evidenceLinks.filter((el) => el.nodeId !== id),
-        comments: state.comments.filter((c) => c.thoughtId !== id),
-        connections: state.connections.filter(
-          (c) => c.sourceId !== id && c.targetId !== id
-        ),
-        selectedThoughtId: state.selectedThoughtId === id ? null : state.selectedThoughtId,
-      })),
+      deleteThought: async (id) => {
+        // Optimistic update
+        set((state) => ({
+          thoughts: state.thoughts.filter((t) => t.id !== id),
+          evidenceLinks: state.evidenceLinks.filter((el) => el.nodeId !== id),
+          comments: state.comments.filter((c) => c.thoughtId !== id),
+          connections: state.connections.filter(
+            (c) => c.sourceId !== id && c.targetId !== id
+          ),
+          selectedThoughtId: state.selectedThoughtId === id ? null : state.selectedThoughtId,
+        }));
+        
+        // Sync with API
+        try {
+          await thoughtsApi.delete(id);
+        } catch (error) {
+          console.error('Failed to delete thought:', error);
+        }
+      },
       
       selectThought: (id) => set({ selectedThoughtId: id }),
       
       // Evidence actions
-      addEvidence: (evidence) => set((state) => ({
-        evidence: [...state.evidence, evidence],
-      })),
+      addEvidence: async (evidence) => {
+        // Optimistic update
+        set((state) => ({
+          evidence: [...state.evidence, evidence],
+        }));
+        
+        // Sync with API
+        try {
+          await evidenceApi.create(evidence);
+        } catch (error) {
+          console.error('Failed to create evidence:', error);
+          set((state) => ({
+            evidence: state.evidence.filter((e) => e.id !== evidence.id),
+          }));
+        }
+      },
       
-      updateEvidence: (id, updates) => set((state) => ({
-        evidence: state.evidence.map((e) =>
-          e.id === id ? { ...e, ...updates } : e
-        ),
-      })),
+      updateEvidence: async (id, updates) => {
+        // Optimistic update
+        set((state) => ({
+          evidence: state.evidence.map((e) =>
+            e.id === id ? { ...e, ...updates } : e
+          ),
+        }));
+        
+        // Sync with API
+        try {
+          await evidenceApi.update(id, updates);
+        } catch (error) {
+          console.error('Failed to update evidence:', error);
+        }
+      },
       
-      deleteEvidence: (id) => set((state) => ({
-        evidence: state.evidence.filter((e) => e.id !== id),
-        evidenceLinks: state.evidenceLinks.filter((el) => el.evidenceId !== id),
-      })),
+      deleteEvidence: async (id) => {
+        // Optimistic update
+        set((state) => ({
+          evidence: state.evidence.filter((e) => e.id !== id),
+          evidenceLinks: state.evidenceLinks.filter((el) => el.evidenceId !== id),
+        }));
+        
+        // Sync with API
+        try {
+          await evidenceApi.delete(id);
+        } catch (error) {
+          console.error('Failed to delete evidence:', error);
+        }
+      },
       
       // Evidence Link actions
-      addEvidenceLink: (link) => set((state) => ({
-        evidenceLinks: [...state.evidenceLinks, link],
-        activities: [
-          ...state.activities,
-          {
-            id: `activity-${Date.now()}`,
-            boardId: state.currentBoard?.id || '',
-            type: 'evidence_attached',
-            userId: link.createdBy,
-            userName: 'Current User',
-            timestamp: new Date(),
-            details: {
-              evidenceId: link.evidenceId,
-              nodeId: link.nodeId,
-              relation: link.relation,
+      addEvidenceLink: async (link) => {
+        // Optimistic update
+        set((state) => ({
+          evidenceLinks: [...state.evidenceLinks, link],
+          activities: [
+            ...state.activities,
+            {
+              id: `activity-${Date.now()}`,
+              boardId: state.currentBoard?.id || '',
+              type: 'evidence_attached',
+              userId: link.createdBy,
+              userName: 'Current User',
+              timestamp: new Date(),
+              details: {
+                evidenceId: link.evidenceId,
+                nodeId: link.nodeId,
+                relation: link.relation,
+              },
             },
-          },
-        ],
-      })),
+          ],
+        }));
+        
+        // Sync with API
+        try {
+          await evidenceLinksApi.create(link);
+        } catch (error) {
+          console.error('Failed to create evidence link:', error);
+          set((state) => ({
+            evidenceLinks: state.evidenceLinks.filter((el) => el.id !== link.id),
+          }));
+        }
+      },
       
-      updateEvidenceLink: (id, updates) => set((state) => ({
-        evidenceLinks: state.evidenceLinks.map((el) =>
-          el.id === id ? { ...el, ...updates } : el
-        ),
-      })),
+      updateEvidenceLink: async (id, updates) => {
+        // Optimistic update
+        set((state) => ({
+          evidenceLinks: state.evidenceLinks.map((el) =>
+            el.id === id ? { ...el, ...updates } : el
+          ),
+        }));
+        
+        // Sync with API
+        try {
+          await evidenceLinksApi.update(id, updates);
+        } catch (error) {
+          console.error('Failed to update evidence link:', error);
+        }
+      },
       
-      deleteEvidenceLink: (id) => set((state) => ({
-        evidenceLinks: state.evidenceLinks.filter((el) => el.id !== id),
-      })),
+      deleteEvidenceLink: async (id) => {
+        // Optimistic update
+        set((state) => ({
+          evidenceLinks: state.evidenceLinks.filter((el) => el.id !== id),
+        }));
+        
+        // Sync with API
+        try {
+          await evidenceLinksApi.delete(id);
+        } catch (error) {
+          console.error('Failed to delete evidence link:', error);
+        }
+      },
       
-      reclassifyEvidenceLink: (id, relation) => set((state) => ({
-        evidenceLinks: state.evidenceLinks.map((el) =>
-          el.id === id ? { ...el, relation } : el
-        ),
-      })),
+      reclassifyEvidenceLink: async (id, relation) => {
+        // Optimistic update
+        set((state) => ({
+          evidenceLinks: state.evidenceLinks.map((el) =>
+            el.id === id ? { ...el, relation } : el
+          ),
+        }));
+        
+        // Sync with API
+        try {
+          await evidenceLinksApi.update(id, { relation });
+        } catch (error) {
+          console.error('Failed to reclassify evidence link:', error);
+        }
+      },
       
       // Connection actions
-      addConnection: (connection) => set((state) => ({
-        connections: [...state.connections, connection],
-      })),
+      addConnection: async (connection) => {
+        // Optimistic update
+        set((state) => ({
+          connections: [...state.connections, connection],
+        }));
+        
+        // Sync with API
+        try {
+          await connectionsApi.create(connection);
+        } catch (error) {
+          console.error('Failed to create connection:', error);
+          set((state) => ({
+            connections: state.connections.filter((c) => c.id !== connection.id),
+          }));
+        }
+      },
       
-      deleteConnection: (id) => set((state) => ({
-        connections: state.connections.filter((c) => c.id !== id),
-      })),
+      deleteConnection: async (id) => {
+        // Optimistic update
+        set((state) => ({
+          connections: state.connections.filter((c) => c.id !== id),
+        }));
+        
+        // Sync with API
+        try {
+          await connectionsApi.delete(id);
+        } catch (error) {
+          console.error('Failed to delete connection:', error);
+        }
+      },
       
       // Comment actions
       addComment: (comment) => set((state) => ({

@@ -51,27 +51,27 @@ export function BoardCanvas() {
         id: conn.id,
         source: conn.sourceId,
         target: conn.targetId,
-        type: 'smoothstep',
-        animated: true,
+        type: 'straight',
+        animated: false,
         style: {
           stroke:
             conn.type === 'supports'
-              ? '#10b981'
+              ? 'hsl(142 76% 46%)'
               : conn.type === 'contradicts'
-              ? '#f87171'
-              : '#94a3b8',
-          strokeWidth: 3,
+              ? 'hsl(0 72% 51%)'
+              : 'hsl(240 5% 60%)',
+          strokeWidth: 2,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
+          width: 16,
+          height: 16,
           color:
             conn.type === 'supports'
-              ? '#10b981'
+              ? 'hsl(142 76% 46%)'
               : conn.type === 'contradicts'
-              ? '#f87171'
-              : '#94a3b8',
+              ? 'hsl(0 72% 51%)'
+              : 'hsl(240 5% 60%)',
         },
       })),
     [connections]
@@ -99,27 +99,27 @@ export function BoardCanvas() {
         id: conn.id,
         source: conn.sourceId,
         target: conn.targetId,
-        type: 'smoothstep',
-        animated: true,
+        type: 'straight',
+        animated: false,
         style: {
           stroke:
             conn.type === 'supports'
-              ? '#10b981'
+              ? 'hsl(142 76% 46%)'
               : conn.type === 'contradicts'
-              ? '#f87171'
-              : '#94a3b8',
-          strokeWidth: 3,
+              ? 'hsl(0 72% 51%)'
+              : 'hsl(240 5% 60%)',
+          strokeWidth: 2,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
+          width: 16,
+          height: 16,
           color:
             conn.type === 'supports'
-              ? '#10b981'
+              ? 'hsl(142 76% 46%)'
               : conn.type === 'contradicts'
-              ? '#f87171'
-              : '#94a3b8',
+              ? 'hsl(0 72% 51%)'
+              : 'hsl(240 5% 60%)',
         },
       }))
     );
@@ -178,13 +178,13 @@ export function BoardCanvas() {
         onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
         fitView
-        className="bg-[#0f1419]"
+        className="bg-background"
       >
         <Background
-          gap={20}
+          gap={40}
           size={1}
-          color="#2a3441"
-          variant={BackgroundVariant.Dots}
+          color="hsl(240 5% 22%)"
+          variant={BackgroundVariant.Lines}
         />
         <Controls className="bg-card border border-border" />
         <MiniMap

@@ -1,38 +1,48 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useBoardStore } from '@/lib/store';
-import { seedBoard, seedThoughts, seedEvidence, seedEvidenceLinks, seedConnections, seedComments, seedAIActions, seedAIInsights } from '@/lib/seed-data';
+import { boardsApi } from '@/lib/api-client';
 import { format } from 'date-fns';
 
 export default function BoardsPage() {
   const router = useRouter();
-  const { currentBoard, setCurrentBoard, thoughts, addThought, addEvidence, addEvidenceLink, addConnection, addComment, addAIAction, addAIInsight } = useBoardStore();
+  const [loading, setLoading] = useState(true);
+  const [boards, setBoards] = useState<any[]>([]);
+  const { setCurrentBoard } = useBoardStore();
 
-  // Initialize with seed data if no board exists
+  // Fetch boards from API
   useEffect(() => {
-    if (!currentBoard && thoughts.length === 0) {
-      setCurrentBoard(seedBoard);
-      seedThoughts.forEach(addThought);
-      seedEvidence.forEach(addEvidence);
-      seedEvidenceLinks.forEach(addEvidenceLink);
-      seedConnections.forEach(addConnection);
-      seedComments.forEach(addComment);
-      seedAIActions.forEach(addAIAction);
-      seedAIInsights.forEach(addAIInsight);
-    }
-  }, [currentBoard, thoughts.length, setCurrentBoard, addThought, addEvidence, addEvidenceLink, addConnection, addComment, addAIAction, addAIInsight]);
+    const fetchBoards = async () => {
+      try {
+        const data = await boardsApi.getAll();
+        setBoards(data.boards);
+      } catch (error) {
+        console.error('Failed to fetch boards:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleOpenBoard = () => {
-    if (currentBoard) {
-      router.push(`/boards/${currentBoard.id}`);
-    }
+    fetchBoards();
+  }, []);
+
+  const handleOpenBoard = (boardId: string) => {
+    router.push(`/boards/${boardId}`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading boards...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,24 +67,25 @@ export default function BoardsPage() {
       {/* Content */}
       <main className="container mx-auto px-6 py-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {currentBoard && (
-            <Card 
+          {boards.map((board) => (
+            <Card
+              key={board.id}
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={handleOpenBoard}
+              onClick={() => handleOpenBoard(board.id)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="flex items-center gap-2">
                       <FolderOpen className="h-5 w-5" />
-                      {currentBoard.title}
+                      {board.title}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {thoughts.length} thoughts • {currentBoard.members.length} members
+                      {board.members.length} members
                     </CardDescription>
                   </div>
-                  <Badge variant={currentBoard.status === 'Active' ? 'default' : 'secondary'}>
-                    {currentBoard.status}
+                  <Badge variant={board.status === 'Active' ? 'default' : 'secondary'}>
+                    {board.status}
                   </Badge>
                 </div>
               </CardHeader>
@@ -82,14 +93,14 @@ export default function BoardsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">Created:</span>
-                    <span>{format(new Date(currentBoard.createdAt), 'MMM d, yyyy')}</span>
+                    <span>{format(new Date(board.createdAt), 'MMM d, yyyy')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">Updated:</span>
-                    <span>{format(new Date(currentBoard.updatedAt), 'MMM d, yyyy')}</span>
+                    <span>{format(new Date(board.updatedAt), 'MMM d, yyyy')}</span>
                   </div>
                   <div className="flex items-center gap-2 pt-2">
-                    {currentBoard.members.map((member) => (
+                    {board.members.map((member: any) => (
                       <div
                         key={member.userId}
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground"
@@ -102,10 +113,10 @@ export default function BoardsPage() {
                 </div>
               </CardContent>
             </Card>
-          )}
+          ))}
 
           {/* Empty state if no boards */}
-          {!currentBoard && (
+          {boards.length === 0 && !loading && (
             <Card className="col-span-full">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FolderOpen className="h-12 w-12 text-muted-foreground mb-4" />
